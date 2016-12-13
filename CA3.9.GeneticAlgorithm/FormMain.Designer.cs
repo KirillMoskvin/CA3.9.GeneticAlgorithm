@@ -1,6 +1,6 @@
 ﻿namespace CA3._9.GeneticAlgorithm
 {
-    partial class Form1
+    partial class FormMain
     {
         /// <summary>
         /// Обязательная переменная конструктора.

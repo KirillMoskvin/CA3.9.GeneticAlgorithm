@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace CA3._9.GeneticAlgorithm
 {
-    public partial class Form1 : Form
+    public partial class FormMain : Form
     {
-        public Form1()
+        public FormMain()
         {
             InitializeComponent();
         }
