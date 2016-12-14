@@ -9,7 +9,7 @@ namespace CA3._9.GeneticAlgorithm
     /// <summary>
     /// Класс особи
     /// </summary>
-    class Chromosome
+    class Chromosome:IComparable
     {
         /// <summary>
         /// Гены особи(элементы, включаемые в подмножество; true - элемент включен, false - не включен)
@@ -31,6 +31,10 @@ namespace CA3._9.GeneticAlgorithm
         /// </summary>
         static List<int> setOfInts=null;
 
+        /// <summary>
+        /// Шанс на выживание
+        /// </summary>
+        double survivialChance=-1;
 
         /// <summary>
         /// Конструктор особи, создаваемой случайным образом
@@ -42,7 +46,7 @@ namespace CA3._9.GeneticAlgorithm
                 setOfInts = setInts;
             genome = new List<bool>(setOfInts.Count);
             for (int i = 0; i < setOfInts.Count; ++i)
-                genome[i] = (random.Next(2) == 0) ? false : true; //случайным образом заполняем каждый элемент
+                genome.Add((random.Next(2) == 0) ? false : true); //случайным образом заполняем каждый элемент
         }
 
         /// <summary>
@@ -60,7 +64,7 @@ namespace CA3._9.GeneticAlgorithm
         }
 
         /// <summary>
-        /// Фитнесс-функция(шансы на выживаемость данной особи)
+        /// Шансы на выживаемость данной особи
         /// </summary>
         /// <returns></returns>
         public int Fitness
@@ -68,18 +72,89 @@ namespace CA3._9.GeneticAlgorithm
             get
             {
                 if (fitness < 0)
-                    fitness = calculateFitness();
+                    fitness = CalculateFitness();
                 return fitness;    
+            }
+            set
+            {
+                fitness = value;
             }
         }
 
 
-        int calculateFitness()
+        /// <summary>
+        /// Рассчет шансов на выживаемость
+        /// </summary>
+        /// <returns></returns>
+        public int CalculateFitness()
         {
             int sum=0;
             for (int i = 0; i < setOfInts.Count; ++i)
                 sum += (genome[i]) ? setOfInts[i] : 0; //если элемент содержится в множестве, добваляем его в сумму, иначе- нет
             return Math.Abs(sum); //возвращаем отклонение суммы от нуля
+        }
+
+        /// <summary>
+        /// Рассчет вероятности выживания данной особи
+        /// </summary>
+        /// <param name="sum">Сумма фитнесс-функций </param>
+        /// <returns>Вероятность выживания</returns>
+        public double CountSurvivialChance(int sum)
+        {
+            survivialChance = (sum-Fitness) / survivialChance;
+            return survivialChance;
+        }
+
+        /// <summary>
+        /// Переопределение вывода 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            string res = "";
+            for (int i = 0; i < genome.Count; i++)
+                if (genome[i])
+                    res += setOfInts[i].ToString() + " ";
+            return res.Trim();
+        }
+
+        /// <summary>
+        /// Преобразование особи в подмножество
+        /// </summary>
+        /// <returns>подмножество</returns>
+        public List<int> ToList()
+        {
+            List<int> res = new List<int>();
+            for (int i = 0; i < genome.Count; i++)
+                if (genome[i])
+                    res.Add(setOfInts[i]);
+            return res;
+        }
+
+        internal void Mutate()
+        {
+            int mutationsCount = random.Next(0, genome.Count / 4); //количество мутации, не более четверти
+            for (int i=0; i<mutationsCount; i++)
+            {
+                int mutatedGene = random.Next(0, genome.Count);
+                genome[mutatedGene] = !(genome[mutatedGene]); //случайный ген меняется
+            }
+        }
+
+
+        /// <summary>
+        /// Реализация интерфейса IComparable
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public int CompareTo(object obj)
+        {
+            Chromosome other = (Chromosome)obj;
+            if (other == null || other.Fitness < this.Fitness)
+                return 1;
+            if (other.Fitness > this.Fitness)
+                return -1;
+            return 0;
         }
 
 
@@ -99,6 +174,19 @@ namespace CA3._9.GeneticAlgorithm
         public bool this[int i]
         { get { return genome[i]; } }
 
+        /// <summary>
+        /// Свойство, 
+        /// </summary>
+        public double SurvivialChance
+        {
+            get
+            {
+                return survivialChance;    
+            }
+        }
+
+
+        
     }
 
 }
