@@ -42,11 +42,16 @@ namespace CA3._9.GeneticAlgorithm
         /// <param name="Count">Количество генов (мощность исходного множества)</param>
         public Chromosome(List<int> setInts)
         {
-            if (setOfInts == null)
-                setOfInts = setInts;
+            setOfInts = setInts;
             genome = new List<bool>(setOfInts.Count);
             for (int i = 0; i < setOfInts.Count; ++i)
                 genome.Add((random.Next(2) == 0) ? false : true); //случайным образом заполняем каждый элемент
+            int j = 0;
+            bool empty = true;
+            while (j < genome.Count && !genome[j]) //проверяем, что множество не пусто
+                ++j;
+            if (empty)
+                genome[random.Next(0, genome.Count)] = true;
         }
 
         /// <summary>
@@ -59,8 +64,15 @@ namespace CA3._9.GeneticAlgorithm
             if (mother.Count != father.Count) //если типы родительских особей не соответствуют
                 throw new Exception("Родительские особи должны иметь одинаковое количество хромосом!");
             genome = new List<bool>(mother.Count);
-            for (int i = 0; i < genome.Count; ++i)
-                genome[i] = (random.Next(2) == 0) ? mother[i] : father[i]; //случайным образом заполняем каждый элемент из материнского или 
+            for (int i = 0; i < mother.Count; ++i)
+                genome.Add ((random.Next(2) == 0) ? mother[i] : father[i]); //случайным образом заполняем каждый элемент из материнского или 
+
+            int j = 0;
+            bool empty = true;
+            while (j < genome.Count && !genome[j]) //проверяем, что множество не пусто
+                ++j;
+            if (empty)
+                genome[random.Next(0, genome.Count)] = true;
         }
 
         /// <summary>
@@ -99,9 +111,9 @@ namespace CA3._9.GeneticAlgorithm
         /// </summary>
         /// <param name="sum">Сумма фитнесс-функций </param>
         /// <returns>Вероятность выживания</returns>
-        public double CountSurvivialChance(int sum)
+        public double CountSurvivialChance(double sum)
         {
-            survivialChance = (sum-Fitness) / survivialChance;
+            survivialChance = (1.0/Fitness) / sum;
             return survivialChance;
         }
 

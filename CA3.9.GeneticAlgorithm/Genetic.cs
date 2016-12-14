@@ -30,7 +30,7 @@ namespace CA3._9.GeneticAlgorithm
         /// <summary>
         /// Сумма значений фитнесс-функции
         /// </summary>
-        int totalFitness;
+        double totalFitness;
 
         /// <summary>
         /// Возможная погрешность решения
@@ -40,39 +40,34 @@ namespace CA3._9.GeneticAlgorithm
         /// <summary>
         /// границы для генератора случайных чисел
         /// </summary>
-        const int upperBound = -10000;
-        const int lowerBound = 10000;
+        const int upperBound = -1000;
+        const int lowerBound = 1000;
 
         /// <summary>
         /// Вероятность мутации
         /// </summary>
-        const int MutationChance = 3;
+        const int MutationChance = 30;
 
         /// <summary>
         /// Максимальное число итераций
         /// </summary>
-        const int maxIterations = 10000;
+        public const int maxIterations = 10000;
 
+        int populationCount;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="countNums"></param>
         /// <param name="populationCount"></param>
-        public Genetic(int countNums, int populationCount, int accuracyPercentage)
+        public Genetic(int countNums, int populationCount)
         {
             setOfInt = new List<int>(countNums); //Генерируем последовательность
             for (int i = 0; i < countNums; ++i)
                 setOfInt.Add(rnd.Next(upperBound, lowerBound));
 
-            population = new List<Chromosome>(populationCount);//Генерируем изначальную популяцию
-            for (int i = 0; i < populationCount; i++)
-                population.Add(new Chromosome(setOfInt));
+            this.populationCount = populationCount;
+            
 
-            totalFitness = FitnessForAll();
-            if (accuracyPercentage < 0 || accuracyPercentage > 100)
-                accuracy = 0;
-            else
-                accuracy = countNums / 100 * accuracyPercentage; //высчитываем возможну погрешность
         }
 
 
@@ -81,22 +76,33 @@ namespace CA3._9.GeneticAlgorithm
         /// </summary>
         /// <param name="iterations"></param>
         /// <returns></returns>
-        public List<int> Solution(out int iterations)
+        public Chromosome Solution(out int iterations, int accuracyPercentage)
         {
             iterations = 0;
+
+            population = new List<Chromosome>(populationCount);//Генерируем изначальную популяцию
+            for (int i = 0; i < populationCount; i++)
+                population.Add(new Chromosome(setOfInt));
+            totalFitness = FitnessForAll();//высчитываем возможную погрешность
+
+            if (accuracyPercentage < 0 || accuracyPercentage > 100)
+                accuracy = 0;
+            else
+                accuracy = setOfInt.Count / 100 * accuracyPercentage; //если введено некорректное значение, ищем точное решение
 
             do
             {
                 population.Sort((a, b) => a.CompareTo(b)); //сортировка по возрастанию фитнесса
                 if (population[0].Fitness <= accuracy) //если решение с заданнной точностью найдено
-                    return population[0].ToList(); //то возвращаем его
+                    return population[0]; //то возвращаем его
 
                 survivingChances = CalcualteChances(); //Определение шансов на продолжение рода
                 population = GetNewGeneration(); //создаем новое поколение
+
                 iterations++;
             } while (iterations < maxIterations); //цикл продолжаем, пока не превысили допустимое число итераций или не нашли решение
             population.Sort((a, b) => a.CompareTo(b));
-            return population[0].ToList();
+            return population[0];
         }
 
         
@@ -105,11 +111,11 @@ namespace CA3._9.GeneticAlgorithm
         /// Рассчет фитнесс-функции для всей популяции
         /// </summary>
         /// <returns>Сумму значений фитнесс-функций</returns>
-        protected int FitnessForAll()
+        protected double FitnessForAll()
         {
-            int sum = 0;
+            double sum = 0;
             foreach (Chromosome chr in population)
-                sum+=chr.Fitness;
+                sum+=1.0/chr.Fitness;
             return sum;
         }
 
@@ -119,10 +125,11 @@ namespace CA3._9.GeneticAlgorithm
         /// <returns></returns>
         protected List<double> CalcualteChances()
         {
+            totalFitness = FitnessForAll();
             List <double> res = new List<double>(population.Count);
             res.Add(population[0].CountSurvivialChance(totalFitness));
-            for (int i = 1; i < res.Count; i++)
-                res[i] = res[i - 1] + population[i].CountSurvivialChance(totalFitness); //высчитываем список вероятностей потомства
+            for (int i = 1; i < population.Count; i++)
+                res.Add(res[i - 1] + population[i].CountSurvivialChance(totalFitness)); //высчитываем список вероятностей потомства
             return res;
         }
 
@@ -133,17 +140,26 @@ namespace CA3._9.GeneticAlgorithm
         private List<Chromosome> GetNewGeneration()
         {
             List<Chromosome> res = new List<Chromosome>(population.Count);
-            for(int i = 0; i<res.Count; i++)
+            for(int i = 0; i<population.Count; i++)
             {
                 int firstNumber = GetIndexByNumber(rnd.NextDouble());
+                if (firstNumber == population.Count)
+                    --firstNumber; 
                 int secondNumber = GetIndexByNumber(rnd.NextDouble());
+                if (secondNumber == population.Count)
+                    --secondNumber;
                 if (firstNumber == secondNumber) //если рандом выбрал двух одинаковых родителей
-                    secondNumber += (secondNumber == 0) ? 1 : -1;  //то берем следующую или предыдущую особь
+                    secondNumber += (secondNumber == population.Count-1) ? -1 : 1;  //то берем следующую или предыдущую особь
                 Chromosome child = new Chromosome(population[firstNumber], population[secondNumber]);//создаем ген-потомка
                 if (child.Fitness < population[firstNumber].Fitness && child.Fitness < population[secondNumber].Fitness) //если выживаемость потомка хуже выживаемости родителей
+                {
                     if (rnd.Next(0, 100) < MutationChance) //то с некоторой вероятностью он мутирует
                         child.Mutate();
-                res[i] = child;
+                }
+                else if (child.Fitness == population[firstNumber].Fitness && child.Fitness == population[secondNumber].Fitness)
+                    //если же выживаемости равны, то мутирует во избежание зацикливания
+                    child.Mutate();
+                res.Add(child);
             }
             return res;
         }
@@ -157,7 +173,20 @@ namespace CA3._9.GeneticAlgorithm
         {
             int i = 0;
             for (; i < survivingChances.Count && survivingChances[i] < num; i++) ; //пропускаем все элементы, значения которых меньше num
+
+        
             return i;
+        }
+
+        public string NumbersToString
+        {
+            get
+            {
+                string res = "";
+                foreach (int elem in setOfInt)
+                    res += elem.ToString()+" ";
+                return res;
+            }
         }
     }
 }
