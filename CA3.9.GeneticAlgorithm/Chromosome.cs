@@ -69,7 +69,7 @@ namespace CA3._9.GeneticAlgorithm
 
             int j = 0;
             bool empty = true;
-            while (j < genome.Count && !genome[j]) //проверяем, что множество не пусто
+            while (j < genome.Count && !genome[j]) //проверяем, что множество не пусто//
                 ++j;
             if (empty)
                 genome[random.Next(0, genome.Count)] = true;
